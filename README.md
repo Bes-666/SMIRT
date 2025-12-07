@@ -72,37 +72,14 @@ git push -u origin main
    - Publish directory: `public`
 7. Нажмите "Deploy site"
 
-### Версии хранения данных
+### Хранение данных
 
-Приложение включает две версии функции:
+Приложение использует упрощенную версию с хранением в памяти:
+- ✅ Работает сразу без настройки
+- ✅ Не требует дополнительных зависимостей
+- ⚠️ Данные не сохраняются между перезапусками serverless функций
 
-1. **messages.js** (текущая) - упрощенная версия с хранением в памяти
-   - ✅ Работает сразу без настройки
-   - ⚠️ Данные не сохраняются между перезапусками функций (serverless)
-
-2. **messages-blobs.js** - версия с Netlify Blobs для постоянного хранения
-   - ✅ Данные сохраняются постоянно
-   - ⚠️ Требует настройки Blobs Storage
-
-### Переключение на версию с Blobs:
-
-1. Переименуйте файлы:
-```bash
-mv netlify/functions/messages.js netlify/functions/messages-simple.js
-mv netlify/functions/messages-blobs.js netlify/functions/messages.js
-```
-
-2. Установите зависимость:
-```bash
-npm install @netlify/blobs
-```
-
-3. Создайте Blobs store:
-```bash
-netlify storage:create messages
-```
-
-Или через веб-интерфейс Netlify: Settings → Storage → Blobs → Create store
+**Примечание:** Для production с постоянным хранением рекомендуется использовать Netlify Blobs или внешнюю базу данных.
 
 ## Технологии
 
