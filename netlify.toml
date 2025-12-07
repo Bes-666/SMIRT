@@ -1,0 +1,15 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"
+
+# Переименуйте messages-simple.js в messages.js для использования упрощенной версии
+# Или используйте messages.js с Netlify Blobs для постоянного хранения
+

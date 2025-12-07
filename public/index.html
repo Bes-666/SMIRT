@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Простой Мессенджер</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💬 Простой Мессенджер</h1>
+        </header>
+
+        <div class="chat-container">
+            <div id="messages" class="messages"></div>
+            
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="authorInput" 
+                    placeholder="Ваше имя (необязательно)" 
+                    class="author-input"
+                >
+                <div class="message-input-wrapper">
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        placeholder="Введите сообщение..." 
+                        class="message-input"
+                    >
+                    <button id="sendButton" class="send-button">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
