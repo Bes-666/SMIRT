@@ -69,7 +69,9 @@ exports.handler = async (event, context) => {
 
     // DELETE - удалить сообщение
     if (event.httpMethod === 'DELETE') {
-      const { id } = event.pathParameters || {};
+      // Получаем ID из query параметров или path параметров
+      const id = event.queryStringParameters?.id || event.pathParameters?.id;
+      
       if (!id) {
         return {
           statusCode: 400,

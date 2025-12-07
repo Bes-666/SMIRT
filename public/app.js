@@ -4,7 +4,6 @@ const API_URL = '/.netlify/functions/messages';
 // DOM элементы
 const messagesContainer = document.getElementById('messages');
 const messageInput = document.getElementById('messageInput');
-const authorInput = document.getElementById('authorInput');
 const sendButton = document.getElementById('sendButton');
 
 // Загрузка сообщений
@@ -62,8 +61,13 @@ function displayMessages(messages, forceUpdate = false) {
     messagesContainer.innerHTML = messages.map(message => `
         <div class="message" data-id="${message.id}">
             <div class="message-header">
-                <span class="message-author">${escapeHtml(message.author)}</span>
-                <span class="message-time">${formatTime(message.timestamp)}</span>
+                <div class="message-header-left">
+                    <span class="message-author">${escapeHtml(message.author)}</span>
+                    <span class="message-time">${formatTime(message.timestamp)}</span>
+                </div>
+                <button class="delete-button" onclick="deleteMessage('${message.id}')" title="Delete message">
+                    <span class="delete-icon">×</span>
+                </button>
             </div>
             <div class="message-text">${escapeHtml(message.text)}</div>
         </div>
@@ -91,10 +95,31 @@ function displayMessages(messages, forceUpdate = false) {
     }
 }
 
+// Удаление сообщения
+async function deleteMessage(messageId) {
+    if (!confirm('DELETE THIS MESSAGE?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}?id=${messageId}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            await loadMessages(true);
+        } else {
+            showError('ERROR: FAILED TO DELETE MESSAGE');
+        }
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        showError('ERROR: DELETE FAILED');
+    }
+}
+
 // Отправка сообщения
 async function sendMessage() {
     const text = messageInput.value.trim();
-    const author = authorInput.value.trim() || 'Anonymous';
 
     if (!text) {
         return;
@@ -102,7 +127,7 @@ async function sendMessage() {
 
     // Блокируем кнопку
     sendButton.disabled = true;
-        sendButton.textContent = 'SENDING...';
+    sendButton.textContent = 'SENDING...';
 
     try {
         const response = await fetch(API_URL, {
@@ -110,7 +135,7 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ text, author }),
+            body: JSON.stringify({ text, author: 'Anonymous' }),
         });
 
         if (response.ok) {
@@ -225,12 +250,6 @@ messageInput.addEventListener('keypress', (e) => {
     }
 });
 
-authorInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        messageInput.focus();
-    }
-});
 
 // Обработка виртуальной клавиатуры на мобильных
 if (isMobile) {
