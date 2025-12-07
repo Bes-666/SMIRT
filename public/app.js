@@ -45,7 +45,7 @@ function displayMessages(messages, forceUpdate = false) {
     }
 
     if (messages.length === 0) {
-        messagesContainer.innerHTML = '<div class="empty-state">Пока нет сообщений. Начните общение!</div>';
+        messagesContainer.innerHTML = '<div class="empty-state">NO MESSAGES DETECTED<br>INITIATE COMMUNICATION...</div>';
         currentMessages = [];
         return;
     }
