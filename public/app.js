@@ -8,26 +8,59 @@ const authorInput = document.getElementById('authorInput');
 const sendButton = document.getElementById('sendButton');
 
 // Загрузка сообщений
-async function loadMessages() {
+async function loadMessages(forceUpdate = false) {
     try {
         const response = await fetch(API_URL);
         const messages = await response.json();
-        displayMessages(messages);
+        displayMessages(messages, forceUpdate);
     } catch (error) {
         console.error('Error loading messages:', error);
         showError('Не удалось загрузить сообщения');
     }
 }
 
+// Хранение текущих сообщений для умного обновления
+let currentMessages = [];
+let lastMessageId = null;
+
+// Проверка, есть ли выделенный текст
+function hasSelection() {
+    const selection = window.getSelection();
+    return selection && selection.toString().length > 0;
+}
+
+// Проверка, находится ли пользователь внизу списка сообщений
+function isScrolledToBottom() {
+    const threshold = 100; // пикселей от низа
+    return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < threshold;
+}
+
 // Отображение сообщений
-function displayMessages(messages) {
-    if (messages.length === 0) {
-        messagesContainer.innerHTML = '<div class="empty-state">Пока нет сообщений. Начните общение!</div>';
+function displayMessages(messages, forceUpdate = false) {
+    // Если пользователь выделяет текст или прокрутил вверх, не обновляем
+    if (!forceUpdate && (hasSelection() || !isScrolledToBottom())) {
+        // Обновляем только данные, но не перерисовываем
+        currentMessages = messages;
         return;
     }
 
+    if (messages.length === 0) {
+        messagesContainer.innerHTML = '<div class="empty-state">Пока нет сообщений. Начните общение!</div>';
+        currentMessages = [];
+        return;
+    }
+
+    // Проверяем, есть ли новые сообщения
+    const hasNewMessages = !lastMessageId || 
+        messages.some(msg => !currentMessages.find(m => m.id === msg.id));
+
+    // Сохраняем позицию прокрутки если не внизу
+    const wasAtBottom = isScrolledToBottom();
+    const oldScrollTop = messagesContainer.scrollTop;
+    const oldScrollHeight = messagesContainer.scrollHeight;
+
     messagesContainer.innerHTML = messages.map(message => `
-        <div class="message">
+        <div class="message" data-id="${message.id}">
             <div class="message-header">
                 <span class="message-author">${escapeHtml(message.author)}</span>
                 <span class="message-time">${formatTime(message.timestamp)}</span>
@@ -36,13 +69,26 @@ function displayMessages(messages) {
         </div>
     `).join('');
 
-    // Плавная прокрутка вниз
-    requestAnimationFrame(() => {
-        messagesContainer.scrollTo({
-            top: messagesContainer.scrollHeight,
-            behavior: 'smooth'
+    currentMessages = messages;
+    if (messages.length > 0) {
+        lastMessageId = messages[messages.length - 1].id;
+    }
+
+    // Восстанавливаем позицию прокрутки или прокручиваем вниз
+    if (wasAtBottom || hasNewMessages) {
+        // Плавная прокрутка вниз
+        requestAnimationFrame(() => {
+            messagesContainer.scrollTo({
+                top: messagesContainer.scrollHeight,
+                behavior: 'smooth'
+            });
         });
-    });
+    } else {
+        // Восстанавливаем позицию прокрутки
+        const newScrollHeight = messagesContainer.scrollHeight;
+        const scrollRatio = oldScrollTop / (oldScrollHeight || 1);
+        messagesContainer.scrollTop = newScrollHeight * scrollRatio;
+    }
 }
 
 // Отправка сообщения
@@ -73,7 +119,7 @@ async function sendMessage() {
             if (isMobile) {
                 messageInput.blur();
             }
-            await loadMessages();
+            await loadMessages(true); // Принудительное обновление после отправки
         } else {
             showError('Не удалось отправить сообщение');
         }
@@ -207,11 +253,75 @@ if (isMobile) {
 }
 
 
-// Автообновление сообщений каждые 2 секунды
-setInterval(loadMessages, 2000);
+// Автообновление сообщений с умной логикой
+let autoUpdateInterval = null;
+
+function startAutoUpdate() {
+    if (autoUpdateInterval) {
+        clearInterval(autoUpdateInterval);
+    }
+    
+    autoUpdateInterval = setInterval(() => {
+        // Не обновляем если пользователь выделяет текст
+        if (!hasSelection()) {
+            loadMessages();
+        }
+    }, 3000); // Увеличиваем интервал до 3 секунд
+}
+
+// Останавливаем автообновление при выделении текста
+document.addEventListener('selectionchange', () => {
+    if (hasSelection()) {
+        if (autoUpdateInterval) {
+            clearInterval(autoUpdateInterval);
+            autoUpdateInterval = null;
+        }
+    } else {
+        // Возобновляем если нет выделения и интервал остановлен
+        if (!autoUpdateInterval) {
+            startAutoUpdate();
+        }
+    }
+});
+
+// Останавливаем автообновление при начале выделения
+messagesContainer.addEventListener('mousedown', () => {
+    if (autoUpdateInterval) {
+        clearInterval(autoUpdateInterval);
+        autoUpdateInterval = null;
+    }
+});
+
+// Возобновляем автообновление через 5 секунд после отпускания мыши
+messagesContainer.addEventListener('mouseup', () => {
+    setTimeout(() => {
+        if (!hasSelection() && !autoUpdateInterval) {
+            startAutoUpdate();
+        }
+    }, 5000);
+});
+
+// То же самое для touch событий на мобильных
+messagesContainer.addEventListener('touchstart', () => {
+    if (autoUpdateInterval) {
+        clearInterval(autoUpdateInterval);
+        autoUpdateInterval = null;
+    }
+});
+
+messagesContainer.addEventListener('touchend', () => {
+    setTimeout(() => {
+        if (!hasSelection() && !autoUpdateInterval) {
+            startAutoUpdate();
+        }
+    }, 5000);
+});
+
+// Запускаем автообновление
+startAutoUpdate();
 
 // Загрузка сообщений при загрузке страницы
-loadMessages();
+loadMessages(true); // Принудительное обновление при загрузке
 
 // Фокус на поле ввода (только на десктопе, на мобильных не фокусируем автоматически)
 if (!isMobile) {
