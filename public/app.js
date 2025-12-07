@@ -15,7 +15,7 @@ async function loadMessages(forceUpdate = false) {
         displayMessages(messages, forceUpdate);
     } catch (error) {
         console.error('Error loading messages:', error);
-        showError('Не удалось загрузить сообщения');
+        showError('ERROR: FAILED TO LOAD MESSAGES');
     }
 }
 
@@ -102,7 +102,7 @@ async function sendMessage() {
 
     // Блокируем кнопку
     sendButton.disabled = true;
-    sendButton.textContent = 'Отправка...';
+        sendButton.textContent = 'SENDING...';
 
     try {
         const response = await fetch(API_URL, {
@@ -121,14 +121,14 @@ async function sendMessage() {
             }
             await loadMessages(true); // Принудительное обновление после отправки
         } else {
-            showError('Не удалось отправить сообщение');
+            showError('ERROR: FAILED TO SEND MESSAGE');
         }
     } catch (error) {
         console.error('Error sending message:', error);
-        showError('Ошибка при отправке сообщения');
+        showError('ERROR: TRANSMISSION FAILED');
     } finally {
         sendButton.disabled = false;
-        sendButton.textContent = 'Отправить';
+        sendButton.textContent = 'SEND';
         messageInput.focus();
     }
 }
@@ -141,14 +141,15 @@ function formatTime(timestamp) {
 
     // Если меньше минуты назад
     if (diff < 60000) {
-        return 'только что';
+        return 'NOW';
     }
 
     // Если сегодня
     if (date.toDateString() === now.toDateString()) {
-        return date.toLocaleTimeString('ru-RU', { 
+        return date.toLocaleTimeString('en-US', { 
             hour: '2-digit', 
-            minute: '2-digit' 
+            minute: '2-digit',
+            hour12: false
         });
     }
 
@@ -156,19 +157,22 @@ function formatTime(timestamp) {
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     if (date.toDateString() === yesterday.toDateString()) {
-        return 'вчера ' + date.toLocaleTimeString('ru-RU', { 
+        return 'YESTERDAY ' + date.toLocaleTimeString('en-US', { 
             hour: '2-digit', 
-            minute: '2-digit' 
+            minute: '2-digit',
+            hour12: false
         });
     }
 
     // Иначе полная дата
-    return date.toLocaleString('ru-RU', {
-        day: '2-digit',
+    return date.toLocaleDateString('en-US', {
         month: '2-digit',
-        year: 'numeric',
+        day: '2-digit',
+        year: 'numeric'
+    }) + ' ' + date.toLocaleTimeString('en-US', {
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: false
     });
 }
 
